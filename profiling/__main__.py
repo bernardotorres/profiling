@@ -176,10 +176,10 @@ def get_title(src_name, src_type=None):
     return os.path.basename(src_name)
 
 
-def make_viewer(mono=False, *loop_args, **loop_kwargs):
+def make_viewer(mono=False, watch=None, *loop_args, **loop_kwargs):
     """Makes a :class:`profiling.viewer.StatisticsViewer` with common options.
     """
-    viewer = StatisticsViewer()
+    viewer = StatisticsViewer(watch=watch)
     loop = viewer.loop(*loop_args, **loop_kwargs)
     if mono:
         loop.screen.set_terminal_properties(1)
@@ -505,6 +505,7 @@ def profiler_arguments(f):
 
 viewer_options = Params([
     click.option('--mono', is_flag=True, help='Disable coloring.'),
+    click.option('--watch', help='Only show traces with a specific statement.'),
 ])
 onetime_profiler_options = Params([
     click.option(
@@ -536,7 +537,7 @@ live_profiler_options = Params([
 
 def __profile__(filename, code, globals_, profiler_factory,
                 pickle_protocol=remote.PICKLE_PROTOCOL, dump_filename=None,
-                mono=False):
+                mono=False, watch=None):
     frame = sys._getframe()
     profiler = profiler_factory(base_frame=frame, base_code=code)
     profiler.start()
@@ -552,7 +553,7 @@ def __profile__(filename, code, globals_, profiler_factory,
     profiler.stats.discard_child(frame.f_code)
     if dump_filename is None:
         try:
-            profiler.run_viewer(get_title(filename), mono=mono)
+            profiler.run_viewer(get_title(filename), mono=mono, watch=watch)
         except KeyboardInterrupt:
             pass
     else:
@@ -580,13 +581,13 @@ class ProfilingCommand(click.Command):
 @onetime_profiler_options
 @viewer_options
 def profile(script, argv, profiler_factory,
-            pickle_protocol, dump_filename, mono):
+            pickle_protocol, dump_filename, mono, watch):
     """Profile a Python script."""
     filename, code, globals_ = script
     sys.argv[:] = [filename] + list(argv)
     __profile__(filename, code, globals_, profiler_factory,
                 pickle_protocol=pickle_protocol, dump_filename=dump_filename,
-                mono=mono)
+                mono=mono, watch=watch)
 
 
 @cli.command('live-profile', aliases=['live'], cls=ProfilingCommand)
@@ -595,7 +596,7 @@ def profile(script, argv, profiler_factory,
 @live_profiler_options
 @viewer_options
 def live_profile(script, argv, profiler_factory, interval, spawn, signum,
-                 pickle_protocol, mono):
+                 pickle_protocol, mono, watch):
     """Profile a Python script continuously."""
     filename, code, globals_ = script
     sys.argv[:] = [filename] + list(argv)
@@ -605,7 +606,7 @@ def live_profile(script, argv, profiler_factory, interval, spawn, signum,
     if pid:
         # parent
         os.close(stderr_w_fd)
-        viewer, loop = make_viewer(mono)
+        viewer, loop = make_viewer(mono, watch)
         # loop.screen._term_output_file = open(os.devnull, 'w')
         title = get_title(filename)
         client = ProfilingClient(viewer, loop.event_loop, parent_sock, title)
@@ -704,11 +705,11 @@ def remote_profile(script, argv, profiler_factory, interval, spawn, signum,
 @click.argument('src', type=ViewerSource(),
                 default=config_default('endpoint', DEFAULT_ENDPOINT))
 @viewer_options
-def view(src, mono):
+def view(src, mono, watch):
     """Inspect statistics by TUI view."""
     src_type, src_name = src
     title = get_title(src_name, src_type)
-    viewer, loop = make_viewer(mono)
+    viewer, loop = make_viewer(mono, watch)
     if src_type == 'dump':
         time = datetime.fromtimestamp(os.path.getmtime(src_name))
         with open(src_name, 'rb') as f:
@@ -743,7 +744,7 @@ def view(src, mono):
 @viewer_options
 def timeit_profile(stmt, number, repeat, setup,
                    profiler_factory, pickle_protocol, dump_filename, mono,
-                   **_ignored):
+                   watch, **_ignored):
     """Profile a Python statement like timeit."""
     del _ignored
     globals_ = {}

@@ -88,14 +88,14 @@ class Profiler(Runnable):
     def make_viewer(self, title=None, at=None):
         """Makes a statistics viewer from the profiling result.
         """
-        viewer = StatisticsViewer()
+        viewer = StatisticsViewer(watch=watch)
         viewer.set_profiler_class(self.__class__)
         stats, cpu_time, wall_time = self.result()
         viewer.set_result(stats, cpu_time, wall_time, title=title, at=at)
         viewer.activate()
         return viewer
 
-    def run_viewer(self, title=None, at=None, mono=False,
+    def run_viewer(self, title=None, at=None, mono=False, watch=None,
                    *loop_args, **loop_kwargs):
         """A shorter form of:
 
@@ -106,7 +106,7 @@ class Profiler(Runnable):
            loop.run()
 
         """
-        viewer = self.make_viewer(title, at=at)
+        viewer = self.make_viewer(title, at=at, watch=watch)
         loop = viewer.loop(*loop_args, **loop_kwargs)
         if mono:
             loop.screen.set_terminal_properties(1)

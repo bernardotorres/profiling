@@ -786,7 +786,8 @@ class StatisticsViewer(object):
         if key in ('q', 'Q'):
             raise urwid.ExitMainLoop()
 
-    def __init__(self):
+    def __init__(self, watch=None):
+        self.watch = watch
         self.table = StatisticsTable(self)
         self.widget = urwid.Padding(self.table, right=1)
 
@@ -803,8 +804,20 @@ class StatisticsViewer(object):
         self.table = table_class(self)
         self.widget.original_widget = self.table
 
+    def is_watched(self, stat):
+        if stat.name == self.watch:
+            return True
+        for child in stat.children:
+           if self.is_watched(child):
+               return True
+
+
+
     def set_result(self, stats, cpu_time=0.0, wall_time=0.0,
                    title=None, at=None):
+        if self.watch and not self.is_watched(stats):
+            return
+
         self._final_result = (stats, cpu_time, wall_time, title, at)
         if not self.paused:
             self.update_result()
