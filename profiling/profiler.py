@@ -85,7 +85,7 @@ class Profiler(Runnable):
         with open(dump_filename, 'wb') as f:
             pickle.dump((self.__class__, result), f, pickle_protocol)
 
-    def make_viewer(self, title=None, at=None):
+    def make_viewer(self, title=None, at=None, watch=None):
         """Makes a statistics viewer from the profiling result.
         """
         viewer = StatisticsViewer(watch=watch)

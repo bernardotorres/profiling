@@ -505,7 +505,7 @@ def profiler_arguments(f):
 
 viewer_options = Params([
     click.option('--mono', is_flag=True, help='Disable coloring.'),
-    click.option('--watch', help='Only show traces with a specific statement.'),
+    click.option('--watch', help='Filter traces with a specific statement.'),
 ])
 onetime_profiler_options = Params([
     click.option(

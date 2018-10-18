@@ -808,10 +808,8 @@ class StatisticsViewer(object):
         if stat.name == self.watch:
             return True
         for child in stat.children:
-           if self.is_watched(child):
-               return True
-
-
+            if self.is_watched(child):
+                return True
 
     def set_result(self, stats, cpu_time=0.0, wall_time=0.0,
                    title=None, at=None):
